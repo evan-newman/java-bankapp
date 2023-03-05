@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+<meta charset="ISO-8859-1">
+<title>Welcome</title>
+</head>
+<body>
+<div>User: <span sec:authentication="name"></span></div>
+<div>Role(s): <span sec:authentication="principal.authorities"></span></div>
+<div sec:authorize="isAuthenticated()">
+<form name="logoutForm" th:action="@{/logout}" method="post" >
+<input type="submit" value="Sign Out" />
+</form>
+</div>
+</body>
+</html>
