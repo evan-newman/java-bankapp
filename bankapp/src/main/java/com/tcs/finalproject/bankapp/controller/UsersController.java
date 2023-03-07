@@ -2,6 +2,8 @@ package com.tcs.finalproject.bankapp.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +15,7 @@ import com.tcs.finalproject.bankapp.entity.Accounts;
 import com.tcs.finalproject.bankapp.entity.Users;
 import com.tcs.finalproject.bankapp.service.AccountsService;
 import com.tcs.finalproject.bankapp.service.UsersService;
+import com.tcs.finalproject.bankapp.exception.BankException;
 
 @RestController
 public class UsersController {
@@ -24,22 +27,22 @@ public class UsersController {
         this.accountsService = accountsService;
     }
 
-    @GetMapping("/user")
+    @GetMapping("/admin/user")
     public List<Users> getAllUsers() {
         return usersService.getAllUsers();
     }
 
-    @GetMapping("/user/{id}")
+    @GetMapping("/admin/user/{id}")
     public Users getUserById(@PathVariable Long id) {
         return usersService.getUserById(id);
     }
 
-    @PostMapping("/user")
+    @PostMapping("/admin/user/new")
     public Users saveOrUpdateUser(@RequestBody Users user) {
         return usersService.saveOrUpdateUser(user);
     }
 
-    @DeleteMapping("/user/{id}")
+    @DeleteMapping("/admin/user/remove/{id}")
     public void deleteUser(@PathVariable Long id) {
         usersService.deleteUser(id);
     } 
@@ -47,68 +50,90 @@ public class UsersController {
     // ------------------------------------------------------------------
 
     @GetMapping("/user/{id}/accounts")
-    public List<Accounts> getAllUsersOpenAccounts(@PathVariable Long id) {
-        return accountsService.getAllUsersOpenAccounts(id);
+    public ResponseEntity<List<Accounts>> getAllUsersOpenAccounts(@PathVariable Long id) {
+        return ResponseEntity.status(HttpStatus.OK).body(accountsService.getAllUsersOpenAccounts(id));
     }
 
     @GetMapping("/user/{id}/accounts/{accId}/balance")
-    public double getUsersOpenAccountBalance(@PathVariable Long id, @PathVariable Long accId) {
-        return accountsService.getUsersOpenAccountBalance(id, accId);
+    public ResponseEntity<Double> getUsersOpenAccountBalance(@PathVariable Long id, @PathVariable Long accId) {
+        try {
+            return ResponseEntity.status(HttpStatus.OK).body(accountsService.getUsersOpenAccountBalance(id, accId));
+        } catch (BankException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
     }
 
     @GetMapping("/user/{id}/accounts/{accId}/purchase/{amount}")
-    public void makeCreditCardPurchase(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
+    public ResponseEntity<String> makeCreditCardPurchase(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
         if (amount < 0) {
-            // error here
-            return;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect amount provided");
         }
 
-        accountsService.makeCreditCardPurchase(accId, id, amount);
+        try {
+            accountsService.makeCreditCardPurchase(accId, id, amount);
+            return ResponseEntity.status(HttpStatus.OK).body("account updated successfully");
+        } catch (BankException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/user/{id}/accounts/{accId}/payment/{amount}")
-    public void makeAccountPayment(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
+    public ResponseEntity<String> makeAccountPayment(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
         if (amount < 0) {
-            //error here
-            return;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect amount provided");
         }
 
-        accountsService.makeAccountPayment(accId, id, amount);
+        try {
+            accountsService.makeAccountPayment(accId, id, amount); // FIX HERE
+            return ResponseEntity.status(HttpStatus.OK).body("account updated successfully");
+        } catch (BankException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/user/{id}/accounts/{accId}/deposit/{amount}") 
-    public void makeAccountDeposit(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
+    public ResponseEntity<String> makeAccountDeposit(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
         if (amount < 0) {
-            //error here
-            return;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect amount provided");
         }
 
-        accountsService.makeAccountDeposit(accId, id, amount); 
+        try {
+            accountsService.makeAccountDeposit(accId, id, amount); 
+            return ResponseEntity.status(HttpStatus.OK).body("account updated successfully");
+        } catch (BankException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/user/{id}/accounts/{accId}/withdraw/{amount}") 
-    public void makeAccountWithdrawal(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
+    public ResponseEntity<String> makeAccountWithdrawal(@PathVariable Long id, @PathVariable Long accId, @PathVariable double amount) {
         if (amount < 0) {
-            //error here
-            return;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect amount provided");
         }
 
-        accountsService.makeAccountWithdrawal(accId, id, amount);
+        try {
+            accountsService.makeAccountWithdrawal(accId, id, amount);
+            return ResponseEntity.status(HttpStatus.OK).body("account updated successfully");
+        } catch (BankException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/user/{id}/accounts/{fromAccId}/transfer/{toAccId}/{amount}")
-    public void makeTransfer(@PathVariable Long id, 
+    public ResponseEntity<String> makeTransfer(@PathVariable Long id, 
                              @PathVariable Long fromAccId,
                              @PathVariable Long toAccId,
                              @PathVariable double amount) {
         
-        //here
         if (amount < 0) {
-            //error here
-            return;
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect amount provided");
         }
 
-        accountsService.makeTransfer(fromAccId, toAccId, id, amount);
-
+        try {
+            accountsService.makeTransfer(fromAccId, toAccId, id, amount);
+            return ResponseEntity.status(HttpStatus.OK).body("transfer between accounts done successfully");
+        } catch (BankException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 }

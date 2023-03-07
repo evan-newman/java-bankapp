@@ -1,6 +1,7 @@
 package com.tcs.finalproject.bankapp.service;
 
 import java.util.List;
+import java.util.Optional;
 import java.sql.Timestamp;
 
 import org.springframework.stereotype.Service;
@@ -15,6 +16,8 @@ import com.tcs.finalproject.bankapp.repository.AccountEntriesRepository;
 import com.tcs.finalproject.bankapp.repository.AccountsRepository;
 import com.tcs.finalproject.bankapp.repository.CreditDetailsRepository;
 import com.tcs.finalproject.bankapp.repository.LoanDetailsRepository;
+
+import com.tcs.finalproject.bankapp.exception.BankException;
 
 @Service
 public class AccountsService {
@@ -54,32 +57,31 @@ public class AccountsService {
     } 
     // -----------------------ADMIN----------------------------
 
-    public Accounts closeAccountById(Long id) {
-        Accounts acc = accountsRepo.findById(id).get();
-        if (acc == null) {
-            //error here
-            return null;
+    public Accounts closeAccountById(Long id) throws BankException {
+        Optional<Accounts> accOpt = accountsRepo.findById(id);
+        if (!accOpt.isPresent()) {
+            throw new BankException("Account is not present");
         }
+
+        Accounts acc = accOpt.get();
 
         acc.setOpen(false);
         accountsRepo.saveAndFlush(acc);
         return acc;
     }
 
-    public Accounts updateAccount(Accounts acc) {
-        Accounts newAcc = accountsRepo.findById(acc.getId()).get();
-        if (newAcc == null) {
-            // error here
-            return null;
+    public Accounts updateAccount(Accounts acc) throws BankException {
+        Optional<Accounts> newAccOpt = accountsRepo.findById(acc.getId());
+        if (!newAccOpt.isPresent()) {
+            throw new BankException("Account is not present");
         }
 
         return accountsRepo.save(acc);
     }
 
-    public CreditDetails createCreditAccount(Long userId, CreditDetailsDTO credDTO) {
+    public CreditDetails createCreditAccount(Long userId, CreditDetailsDTO credDTO) throws BankException {
         if (credDTO.getCreditLimit() >= 0) {
-            //error here
-            return null;
+            throw new BankException("Incorrect credit limit");
         }
 
         Accounts newAcc = accountsRepo.save(new Accounts(credDTO, userId));
@@ -91,10 +93,9 @@ public class AccountsService {
         return newCredDet;
     }
 
-    public LoanDetails createLoanAccount(Long userId, LoanDetailsDTO loanDTO) {
+    public LoanDetails createLoanAccount(Long userId, LoanDetailsDTO loanDTO) throws BankException {
         if (loanDTO.getOriginalAmount() >= 0) {
-            //error here
-            return null;
+            throw new BankException("Incorrect amount given");
         }
 
         Accounts newAcc = accountsRepo.save(new Accounts(loanDTO, userId));
@@ -116,27 +117,23 @@ public class AccountsService {
         return accountsRepo.findByIdAndUserIdAndOpen(id, userId, true);
     }
 
-    public double getUsersOpenAccountBalance(Long userId, Long accId) {
+    public double getUsersOpenAccountBalance(Long userId, Long accId) throws BankException {
         Accounts acc = accountsRepo.findByIdAndUserIdAndOpen(accId, userId, true);
         if (acc == null) {
-            // error here
-            // possibly account is closed, or not owned by user
-            return 0;
+            throw new BankException("Account is either closed or not owned by the user");
         }
             
         AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
         if (accEnt == null) {
-            // error here
-            return 0;
+            throw new BankException("Account not found");
         }
         return accEnt.getAmount();
     }
 
-    public void makeAccountDeposit(Long accId, Long userId, double depositAmount) {
+    public void makeAccountDeposit(Long accId, Long userId, double depositAmount) throws BankException {
         Accounts acc = getUsersOpenAccountById(accId, userId);
         if (acc == null) {
-            //error here
-            return;
+            throw new BankException("Account not found");
         }
 
         Long accountId = acc.getAccountTypeId();
@@ -147,16 +144,14 @@ public class AccountsService {
             accEnt.setAmount(newAmount);
             accountEntriesRepo.saveAndFlush(accEnt);
         } else { //loan or cc account
-            //error here
-            return;
+            throw new BankException("Attempting deposit on a non checking or savings account");
         }
     }
 
-    public void makeAccountWithdrawal(Long accId, Long userId, double withdrawAmount) {
+    public void makeAccountWithdrawal(Long accId, Long userId, double withdrawAmount) throws BankException {
         Accounts acc = getUsersOpenAccountById(accId, userId);
         if (acc == null) {
-            //error here
-            return;
+            throw new BankException("Account not found");
         }
 
         Long accountId = acc.getAccountTypeId();
@@ -165,30 +160,26 @@ public class AccountsService {
             AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
             double newAmount = accEnt.getAmount() - withdrawAmount;
             if (newAmount < 0) {
-                //error here
-                return;
+                throw new BankException("invalid amount, sets account to negative balance");
             }
 
             accEnt.setAmount(newAmount);
             accountEntriesRepo.saveAndFlush(accEnt);
         } else { //loan or cc account
-            //error here
-            return;
+            throw new BankException("Attempting withdrawal on a non checking or savings account");
         }
     }
 
-    public void makeCreditCardPurchase(Long accId, Long userId, double purchaseAmount) {
+    public void makeCreditCardPurchase(Long accId, Long userId, double purchaseAmount) throws BankException {
         Accounts acc = getUsersOpenAccountById(accId, userId);
         if (acc == null) {
-            //error here
-            return;
+            throw new BankException("Account not found");
         }
 
         Long accountId = acc.getAccountTypeId();
         // only credit cards can you make a purchase
         if (accountId != 4) {
-            //error here
-            return;
+            throw new BankException("Attempting purchase on account that's not a credit card");
         }
         AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
         CreditDetails credDet = creditDetailsRepo.findByAccountId(accId);
@@ -196,18 +187,16 @@ public class AccountsService {
         double newAmount = accEnt.getAmount() - purchaseAmount;
         double maxLimit = credDet.getCreditLimit();
         if (newAmount < maxLimit) {
-            //error here
-            return;
+            throw new BankException("invalid amount, sets account pass max credit limit");
         }
         accEnt.setAmount(newAmount);
         accountEntriesRepo.saveAndFlush(accEnt);
     }
 
-    public void makeAccountPayment(Long accId, Long userId, double paymentAmount) {
+    public void makeAccountPayment(Long accId, Long userId, double paymentAmount) throws BankException {
         Accounts acc = getUsersOpenAccountById(accId, userId);
         if (acc == null) {
-            //error here
-            return;
+            throw new BankException("Account not found");
         }
 
         Long accountId = acc.getAccountTypeId();
@@ -216,8 +205,7 @@ public class AccountsService {
             AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
             double newAmount = accEnt.getAmount() + paymentAmount;
             if (newAmount > 0) {
-                //error here
-                return;
+                throw new BankException("invalid amount, sets account to positive balance");
             } else if (accountId == 3 && newAmount == 0) { //loan payed off close account
                 acc.setOpen(false);
                 accountsRepo.saveAndFlush(acc);
@@ -226,29 +214,25 @@ public class AccountsService {
             accEnt.setAmount(newAmount);
             accountEntriesRepo.saveAndFlush(accEnt);
         } else { //checking or savings account
-            //error here
-            return;
+            throw new BankException("Attempting payment on a non credit card or loan account");
         }
     }
 
-    public void makeTransfer(Long fromAccId, Long toAccId, Long userId, double transferAmount) {
+    public void makeTransfer(Long fromAccId, Long toAccId, Long userId, double transferAmount) throws BankException {
         Accounts fromAcc = getUsersOpenAccountById(fromAccId, userId);
         if (fromAcc == null) {
-            //error here
-            return;
+            throw new BankException("From account not found");
         }
 
         Long fromAccountType = fromAcc.getAccountTypeId();
         // cannot transfer FROM cc or loan account
         if (fromAccountType == 3 || fromAccountType == 4) {
-            //error here
-            return;
+            throw new BankException("Cannot transfer from a credit card or loan account");
         }
 
         Accounts toAcc = getAccountByIdAndOpen(toAccId);
         if (toAcc == null) {
-            //error here
-            return;
+            throw new BankException("To account not found");
         }
         Long toAccountType = toAcc.getAccountTypeId();
 
@@ -256,16 +240,14 @@ public class AccountsService {
         AccountEntries fromAccEnt = accountEntriesRepo.findByAccountId(fromAccId);
         double fromNewAmount = fromAccEnt.getAmount() - transferAmount;
         if (fromNewAmount < 0) {
-            //error here
-            return;
+            throw new BankException("invalid amount, sets from account transfer to negative balance");
         }
 
         AccountEntries toAccEnt = accountEntriesRepo.findByAccountId(toAccId);
         double toNewAmount = toAccEnt.getAmount() + transferAmount;
         if (toAccountType == 3 || toAccountType == 4) {
             if (toNewAmount > 0) {
-                //error here
-                return;
+                throw new BankException("invalid amount, sets to account transfer to positive balance");
             } else if (toAccountType == 3 && toNewAmount == 0) { //loan payed off close account
                 toAcc.setOpen(false);
                 accountsRepo.saveAndFlush(toAcc);

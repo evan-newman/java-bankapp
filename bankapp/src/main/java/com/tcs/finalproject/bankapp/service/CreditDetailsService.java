@@ -1,6 +1,7 @@
 package com.tcs.finalproject.bankapp.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ import com.tcs.finalproject.bankapp.entity.CreditDetails;
 import com.tcs.finalproject.bankapp.repository.AccountEntriesRepository;
 import com.tcs.finalproject.bankapp.repository.AccountsRepository;
 import com.tcs.finalproject.bankapp.repository.CreditDetailsRepository;
+import com.tcs.finalproject.bankapp.exception.BankException;
 
 @Service
 public class CreditDetailsService {
@@ -42,21 +44,20 @@ public class CreditDetailsService {
     } 
 
     // ------------------------------------------------------------
-    public CreditDetails updateCreditDetails(CreditDetails creditDet) {
+    public CreditDetails updateCreditDetails(CreditDetails creditDet) throws BankException {
         Long accId = creditDet.getAccountId();
-        Accounts acc = accountsRepo.findById(accId).get(); // doesn't actually error handle???
-        if (acc == null) {
-            //error here
-            return null;
-        } else if (acc.getAccountTypeId() != 4) {
-            //error here
-            return null;
+        Optional<Accounts> accOpt = accountsRepo.findById(accId);
+        if (!accOpt.isPresent()) {
+            throw new BankException("Account not found");
+        }
+        Accounts acc = accOpt.get(); 
+        if (acc.getAccountTypeId() != 4) {
+            throw new BankException("Incorrect account type not a credit card");
         }
 
         AccountEntries accEnt = accountEntriesRepo.findById(accId).get();
         if (accEnt.getAmount() < creditDet.getCreditLimit()) {
-            //error here
-            return null;
+            throw new BankException("Invalid amount sets amount past credit limit");
         }
 
         return creditDetailsRepo.save(creditDet);
