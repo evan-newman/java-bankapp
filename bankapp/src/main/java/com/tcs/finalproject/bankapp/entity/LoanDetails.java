@@ -49,7 +49,7 @@ public class LoanDetails {
         this.monthlyTerm = loanDTO.getMonthlyTerm();
         this.interestRate = loanDTO.getInterestRate();
 
-        this.monthlyPayment = ((-this.originalAmount * this.interestRate * (this.monthlyTerm / 12)) / 12) + 
-                               (-this.originalAmount / this.monthlyTerm);
+        this.monthlyPayment = ((-this.originalAmount * this.interestRate * (this.monthlyTerm / 12)) + 
+                               -this.originalAmount) / this.monthlyTerm;
     }
 }

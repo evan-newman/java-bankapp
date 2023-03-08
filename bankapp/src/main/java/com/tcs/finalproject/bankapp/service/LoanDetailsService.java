@@ -5,11 +5,9 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.tcs.finalproject.bankapp.entity.AccountEntries;
 import com.tcs.finalproject.bankapp.entity.Accounts;
 import com.tcs.finalproject.bankapp.entity.LoanDetails;
 import com.tcs.finalproject.bankapp.exception.BankException;
-import com.tcs.finalproject.bankapp.repository.AccountEntriesRepository;
 import com.tcs.finalproject.bankapp.repository.AccountsRepository;
 import com.tcs.finalproject.bankapp.repository.LoanDetailsRepository;
 
@@ -17,14 +15,11 @@ import com.tcs.finalproject.bankapp.repository.LoanDetailsRepository;
 public class LoanDetailsService {
     private final LoanDetailsRepository loanDetailsRepo;
     private final AccountsRepository accountsRepo;
-    private final AccountEntriesRepository accountEntriesRepo;
 
     public LoanDetailsService(LoanDetailsRepository loanDetailsRepo, 
-                              AccountsRepository accountsRepo,
-                              AccountEntriesRepository accountEntriesRepo) {
+                              AccountsRepository accountsRepo) {
         this.loanDetailsRepo = loanDetailsRepo;
         this.accountsRepo = accountsRepo;
-        this.accountEntriesRepo = accountEntriesRepo;
     }
 
     public List<LoanDetails> getAllLoanDetails() {
@@ -57,8 +52,8 @@ public class LoanDetailsService {
         }
 
         LoanDetails ogLoanDet = loanDetailsRepo.findByAccountId(accId);
-        if (ogLoanDet.getOriginalAmount() != loanDet.getOriginalAmount())  {
-            throw new BankException("Not permitted to adjust the original loan amount");
+        if (ogLoanDet.getOriginalAmount() > loanDet.getOriginalAmount())  {
+            throw new BankException("Not permitted to adjust the original loan amount to a greater amount");
         }
         loanDet.setId(ogLoanDet.getId());
         return loanDetailsRepo.save(loanDet);

@@ -95,7 +95,7 @@ public class AccountsService {
 
     public LoanDetails createLoanAccount(Long userId, LoanDetailsDTO loanDTO) throws BankException {
         if (loanDTO.getOriginalAmount() >= 0) {
-            throw new BankException("Incorrect amount given");
+            throw new BankException("Incorrect loan amount given");
         }
 
         Accounts newAcc = accountsRepo.save(new Accounts(loanDTO, userId));
@@ -138,7 +138,7 @@ public class AccountsService {
 
         Long accountId = acc.getAccountTypeId();
         //only checking and savings can make deposit
-        if (accountId == 1 || accountId == 2) {
+        if (accountId == 1L || accountId == 2L) {
             AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
             double newAmount = accEnt.getAmount() + depositAmount;
             accEnt.setAmount(newAmount);
@@ -156,7 +156,7 @@ public class AccountsService {
 
         Long accountId = acc.getAccountTypeId();
         //only checking and savings can make withdrawal
-        if (accountId == 1 || accountId == 2) {
+        if (accountId == 1L || accountId == 2L) {
             AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
             double newAmount = accEnt.getAmount() - withdrawAmount;
             if (newAmount < 0) {
@@ -178,7 +178,7 @@ public class AccountsService {
 
         Long accountId = acc.getAccountTypeId();
         // only credit cards can you make a purchase
-        if (accountId != 4) {
+        if (accountId != 4L) {
             throw new BankException("Attempting purchase on account that's not a credit card");
         }
         AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
@@ -201,12 +201,12 @@ public class AccountsService {
 
         Long accountId = acc.getAccountTypeId();
         //only credit cards and loans can make a payment
-        if (accountId == 3 || accountId == 4) {
+        if (accountId == 3L || accountId == 4L) {
             AccountEntries accEnt = accountEntriesRepo.findByAccountId(accId);
             double newAmount = accEnt.getAmount() + paymentAmount;
             if (newAmount > 0) {
                 throw new BankException("invalid amount, sets account to positive balance");
-            } else if (accountId == 3 && newAmount == 0) { //loan payed off close account
+            } else if (accountId == 3L && newAmount == 0) { //loan payed off close account
                 acc.setOpen(false);
                 accountsRepo.saveAndFlush(acc);
             }
@@ -226,7 +226,7 @@ public class AccountsService {
 
         Long fromAccountType = fromAcc.getAccountTypeId();
         // cannot transfer FROM cc or loan account
-        if (fromAccountType == 3 || fromAccountType == 4) {
+        if (fromAccountType == 3L || fromAccountType == 4L) {
             throw new BankException("Cannot transfer from a credit card or loan account");
         }
 
@@ -245,10 +245,10 @@ public class AccountsService {
 
         AccountEntries toAccEnt = accountEntriesRepo.findByAccountId(toAccId);
         double toNewAmount = toAccEnt.getAmount() + transferAmount;
-        if (toAccountType == 3 || toAccountType == 4) {
+        if (toAccountType == 3L || toAccountType == 4L) {
             if (toNewAmount > 0) {
                 throw new BankException("invalid amount, sets to account transfer to positive balance");
-            } else if (toAccountType == 3 && toNewAmount == 0) { //loan payed off close account
+            } else if (toAccountType == 3L && toNewAmount == 0) { //loan payed off close account
                 toAcc.setOpen(false);
                 accountsRepo.saveAndFlush(toAcc);
             }
