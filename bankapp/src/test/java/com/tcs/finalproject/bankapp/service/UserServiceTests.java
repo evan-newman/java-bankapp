@@ -13,13 +13,10 @@ import com.tcs.finalproject.bankapp.entity.Accounts;
 import com.tcs.finalproject.bankapp.entity.CreditDetails;
 import com.tcs.finalproject.bankapp.entity.LoanDetails;
 import com.tcs.finalproject.bankapp.exception.BankException;
-import com.tcs.finalproject.bankapp.service.AccountsService;
 import com.tcs.finalproject.bankapp.repository.AccountsRepository;
 import com.tcs.finalproject.bankapp.repository.AccountEntriesRepository;
 import com.tcs.finalproject.bankapp.repository.CreditDetailsRepository;
 import com.tcs.finalproject.bankapp.repository.LoanDetailsRepository;
-
-import com.tcs.finalproject.bankapp.exception.BankException;
 
 /*
 *******************************************************************************************************************
@@ -42,9 +39,6 @@ public class UserServiceTests {
 
     @Autowired
     private LoanDetailsRepository loanDetRepo;
-
-    @Autowired
-    private CreditDetailsRepository credRepo;
 
     @Autowired
     private AccountsService accountService;

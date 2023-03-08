@@ -86,7 +86,7 @@ public class AccountsService {
 
         Accounts newAcc = accountsRepo.save(new Accounts(credDTO, userId));
 
-        AccountEntries newAccEnt = accountEntriesRepo.save(new AccountEntries(0L, newAcc.getId(), 0, new Timestamp(System.currentTimeMillis())));
+        accountEntriesRepo.save(new AccountEntries(0L, newAcc.getId(), 0, new Timestamp(System.currentTimeMillis())));
 
         CreditDetails newCredDet = creditDetailsRepo.save(new CreditDetails(credDTO, newAcc.getId()));
 
@@ -100,7 +100,7 @@ public class AccountsService {
 
         Accounts newAcc = accountsRepo.save(new Accounts(loanDTO, userId));
 
-        AccountEntries newAccEnt = accountEntriesRepo.save(new AccountEntries(0L, newAcc.getId(), loanDTO.getOriginalAmount(), new Timestamp(System.currentTimeMillis())));
+        accountEntriesRepo.save(new AccountEntries(0L, newAcc.getId(), loanDTO.getOriginalAmount(), new Timestamp(System.currentTimeMillis())));
 
         LoanDetails newLoanDet = loanDetailsRepo.save(new LoanDetails(loanDTO, newAcc.getId()));
 
